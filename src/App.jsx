@@ -1,19 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import IncomeForm from './components/IncomeForm';
 import BreakdownCard from './components/BreakdownCard';
 import BreakdownPieChart from './components/PieChart';
 import HistoryTable from './components/HistoryTable';
+import { getAllIncome } from './api/income';
+
+const DEFAULT_USER = 'veerav';
 
 export default function App() {
   const [breakdown, setBreakdown] = useState(null);
   const [income, setIncome]       = useState(null);
   const [refresh, setRefresh]     = useState(0);
-  const userId = 'veerav';
+  const [userId]                  = useState(DEFAULT_USER);
+
+  // ✅ Load existing data on app start
+  useEffect(() => {
+    getAllIncome(userId)
+      .then((res) => {
+        if (res.data && res.data.length > 0) {
+          // Show the latest month's breakdown on load
+          const latest = res.data[0];
+          setBreakdown(latest.breakdown);
+          setIncome(latest.income);
+        }
+      })
+      .catch(console.error);
+  }, [userId]);
 
   const handleSuccess = (data) => {
     setBreakdown(data.breakdown);
     setIncome(data.income);
-    setRefresh((r) => r + 1); // Trigger history reload
+    setRefresh((r) => r + 1);
   };
 
   return (
@@ -26,18 +43,20 @@ export default function App() {
         <p className="text-gray-500 mt-1">
           50/30/20 Budget Rule — Smart money management
         </p>
+        <p className="text-sm text-blue-600 font-medium mt-1">
+          👤 User: {userId}
+        </p>
       </div>
 
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left: Form */}
+        {/* Left: Form + Cards */}
         <div className="space-y-6">
-          <IncomeForm onSuccess={handleSuccess} />
+          <IncomeForm onSuccess={handleSuccess} userId={userId} />
 
-          {/* Summary Cards */}
           {breakdown && (
             <div className="space-y-4">
               <p className="text-gray-600 text-sm font-medium">
-                Breakdown for ${income?.toLocaleString()} income:
+                Breakdown for ₹{income?.toLocaleString('en-IN')} income:
               </p>
               <BreakdownCard
                 label="Savings"

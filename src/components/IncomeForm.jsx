@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { saveIncome } from '../api/income';
 
-export default function IncomeForm({ onSuccess }) {
-  const [userId, setUserId]   = useState('veerav');
+export default function IncomeForm({ onSuccess, userId }) {
   const [income, setIncome]   = useState('');
   const [month, setMonth]     = useState('2026-05');
   const [loading, setLoading] = useState(false);
@@ -28,6 +27,7 @@ export default function IncomeForm({ onSuccess }) {
         💰 Enter Your Monthly Income
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* ✅ Show userId as read-only */}
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
             User ID
@@ -35,15 +35,14 @@ export default function IncomeForm({ onSuccess }) {
           <input
             type="text"
             value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g. veerav"
-            required
+            readOnly
+            className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-2 text-gray-500 cursor-not-allowed"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
-            Monthly Income ($)
+            {/* ✅ INR label */}
+            Monthly Income (₹ INR)
           </label>
           <input
             type="number"

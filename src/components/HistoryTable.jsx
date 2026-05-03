@@ -26,26 +26,35 @@ export default function HistoryTable({ userId, refresh }) {
         <table className="w-full text-sm text-left">
           <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
             <tr>
+              {/* ✅ Added Username column */}
+              <th className="px-4 py-3">User</th>
               <th className="px-4 py-3">Month</th>
-              <th className="px-4 py-3">Income</th>
-              <th className="px-4 py-3">Savings (50%)</th>
-              <th className="px-4 py-3">Needs (30%)</th>
-              <th className="px-4 py-3">Wants (20%)</th>
+              <th className="px-4 py-3">Income (₹)</th>
+              <th className="px-4 py-3">Savings 50% (₹)</th>
+              <th className="px-4 py-3">Needs 30% (₹)</th>
+              <th className="px-4 py-3">Wants 20% (₹)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {history.map((item) => (
               <tr key={item.month} className="hover:bg-gray-50">
+                {/* ✅ Username shown */}
+                <td className="px-4 py-3 font-medium text-blue-600">
+                  👤 {item.userId}
+                </td>
                 <td className="px-4 py-3 font-medium">{item.month}</td>
-                <td className="px-4 py-3">${item.income?.toLocaleString()}</td>
+                {/* ✅ INR formatting */}
+                <td className="px-4 py-3">
+                  ₹{item.income?.toLocaleString('en-IN')}
+                </td>
                 <td className="px-4 py-3 text-blue-600">
-                  ${item.breakdown.savings.amount?.toLocaleString()}
+                  ₹{item.breakdown.savings.amount?.toLocaleString('en-IN')}
                 </td>
                 <td className="px-4 py-3 text-green-600">
-                  ${item.breakdown.needs.amount?.toLocaleString()}
+                  ₹{item.breakdown.needs.amount?.toLocaleString('en-IN')}
                 </td>
                 <td className="px-4 py-3 text-yellow-600">
-                  ${item.breakdown.wants.amount?.toLocaleString()}
+                  ₹{item.breakdown.wants.amount?.toLocaleString('en-IN')}
                 </td>
               </tr>
             ))}
