@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL 
+  || '51no8tj6ff.execute-api.us-east-1.amazonaws.com/prod';
+
+console.log('API URL:', BASE_URL);
 
 // POST - Save income
 export const saveIncome = async (userId, income, month) => {
