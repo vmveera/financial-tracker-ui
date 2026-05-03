@@ -3,33 +3,51 @@ import IncomeForm from './components/IncomeForm';
 import BreakdownCard from './components/BreakdownCard';
 import BreakdownPieChart from './components/PieChart';
 import HistoryTable from './components/HistoryTable';
-import { getAllIncome } from './api/income';
-
-const DEFAULT_USER = 'veerav';
+import { getAllIncome, getUsers } from './api/income';
 
 export default function App() {
-  const [breakdown, setBreakdown] = useState(null);
-  const [income, setIncome]       = useState(null);
-  const [refresh, setRefresh]     = useState(0);
-  const [userId]                  = useState(DEFAULT_USER);
+  const [breakdown, setBreakdown]   = useState(null);
+  const [income, setIncome]         = useState(null);
+  const [refresh, setRefresh]       = useState(0);
+  const [userId, setUserId]         = useState('');
+  const [users, setUsers]           = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
-  // ✅ Load existing data on app start
+  // ✅ Load all users from DynamoDB on startup
   useEffect(() => {
+    getUsers()
+      .then((res) => {
+        const userList = res.users || [];
+        setUsers(userList);
+        if (userList.length > 0) setUserId(userList[0]);
+      })
+      .catch(console.error)
+      .finally(() => setLoadingUsers(false));
+  }, []);
+
+  // ✅ Load latest breakdown when user changes
+  useEffect(() => {
+    if (!userId) return;
+    setBreakdown(null);
+    setIncome(null);
     getAllIncome(userId)
       .then((res) => {
         if (res.data && res.data.length > 0) {
-          // Show the latest month's breakdown on load
           const latest = res.data[0];
           setBreakdown(latest.breakdown);
           setIncome(latest.income);
         }
       })
       .catch(console.error);
-  }, [userId]);
+  }, [userId, refresh]);
 
   const handleSuccess = (data) => {
     setBreakdown(data.breakdown);
     setIncome(data.income);
+    setRefresh((r) => r + 1);
+  };
+
+  const handleDelete = () => {
     setRefresh((r) => r + 1);
   };
 
@@ -43,9 +61,29 @@ export default function App() {
         <p className="text-gray-500 mt-1">
           50/30/20 Budget Rule — Smart money management
         </p>
-        <p className="text-sm text-blue-600 font-medium mt-1">
-          👤 User: {userId}
-        </p>
+
+        {/* ✅ User Selector */}
+        <div className="mt-4 flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-600">
+            👤 Select User:
+          </label>
+          {loadingUsers ? (
+            <p className="text-gray-400 text-sm">Loading users...</p>
+          ) : (
+            <select
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {users.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          )}
+          <span className="text-xs text-gray-400">
+            {users.length} user{users.length !== 1 ? 's' : ''} found
+          </span>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -56,7 +94,7 @@ export default function App() {
           {breakdown && (
             <div className="space-y-4">
               <p className="text-gray-600 text-sm font-medium">
-                Breakdown for ₹{income?.toLocaleString('en-IN')} income:
+                Latest breakdown for ₹{income?.toLocaleString('en-IN')} income:
               </p>
               <BreakdownCard
                 label="Savings"
@@ -91,7 +129,11 @@ export default function App() {
 
       {/* History Table */}
       <div className="max-w-5xl mx-auto mt-6">
-        <HistoryTable userId={userId} refresh={refresh} />
+        <HistoryTable
+          userId={userId}
+          refresh={refresh}
+          onDelete={handleDelete}
+        />
       </div>
     </div>
   );

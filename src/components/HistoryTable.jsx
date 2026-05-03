@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { getAllIncome } from '../api/income';
+import { getAllIncome, deleteIncome } from '../api/income';
 
-export default function HistoryTable({ userId, refresh }) {
+export default function HistoryTable({ userId, refresh, onDelete }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [deletingMonth, setDeletingMonth] = useState(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -14,8 +15,36 @@ export default function HistoryTable({ userId, refresh }) {
       .finally(() => setLoading(false));
   }, [userId, refresh]);
 
-  if (loading) return <p className="text-gray-500">Loading history...</p>;
-  if (!history.length) return null;
+  const handleDelete = async (month) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete income for ${month}?`
+    );
+    if (!confirmed) return;
+
+    setDeletingMonth(month);
+    try {
+      await deleteIncome(userId, month);
+      setHistory((prev) => prev.filter((item) => item.month !== month));
+      if (onDelete) onDelete();
+    } catch (err) {
+      alert('Failed to delete. Please try again.');
+      console.error(err);
+    } finally {
+      setDeletingMonth(null);
+    }
+  };
+
+  if (loading) return (
+    <div className="bg-white rounded-2xl shadow-md p-6">
+      <p className="text-gray-500">Loading history...</p>
+    </div>
+  );
+
+  if (!history.length) return (
+    <div className="bg-white rounded-2xl shadow-md p-6">
+      <p className="text-gray-500">No income history found for {userId}.</p>
+    </div>
+  );
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-6">
@@ -26,24 +55,23 @@ export default function HistoryTable({ userId, refresh }) {
         <table className="w-full text-sm text-left">
           <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
             <tr>
-              {/* ✅ Added Username column */}
               <th className="px-4 py-3">User</th>
               <th className="px-4 py-3">Month</th>
               <th className="px-4 py-3">Income (₹)</th>
               <th className="px-4 py-3">Savings 50% (₹)</th>
               <th className="px-4 py-3">Needs 30% (₹)</th>
               <th className="px-4 py-3">Wants 20% (₹)</th>
+              {/* ✅ Delete column */}
+              <th className="px-4 py-3">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {history.map((item) => (
               <tr key={item.month} className="hover:bg-gray-50">
-                {/* ✅ Username shown */}
                 <td className="px-4 py-3 font-medium text-blue-600">
                   👤 {item.userId}
                 </td>
                 <td className="px-4 py-3 font-medium">{item.month}</td>
-                {/* ✅ INR formatting */}
                 <td className="px-4 py-3">
                   ₹{item.income?.toLocaleString('en-IN')}
                 </td>
@@ -55,6 +83,16 @@ export default function HistoryTable({ userId, refresh }) {
                 </td>
                 <td className="px-4 py-3 text-yellow-600">
                   ₹{item.breakdown.wants.amount?.toLocaleString('en-IN')}
+                </td>
+                {/* ✅ Delete button */}
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => handleDelete(item.month)}
+                    disabled={deletingMonth === item.month}
+                    className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-lg transition disabled:opacity-50"
+                  >
+                    {deletingMonth === item.month ? 'Deleting...' : '🗑️ Delete'}
+                  </button>
                 </td>
               </tr>
             ))}
